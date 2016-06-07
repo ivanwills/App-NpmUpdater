@@ -10,7 +10,7 @@ use strict;
 use warnings;
 use version;
 use Scalar::Util;
-use List::Util;
+use List::Util qw/max/;
 #use List::MoreUtils;
 use Getopt::Long;
 use Pod::Usage;
@@ -18,50 +18,100 @@ use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 use FindBin qw/$Bin/;
 use Path::Tiny;
+use JSON::XS qw/decode_json/;
+use WWW::Mechanize;
 
 our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 
 my %option = (
-	out     => undef,
-	verbose => 0,
-	man     => 0,
-	help    => 0,
-	VERSION => 0,
+    out     => undef,
+    verbose => 0,
+    man     => 0,
+    help    => 0,
+    VERSION => 0,
 );
 
-if ( !@ARGV ) {
-	pod2usage( -verbose => 1 );
+sub sorter {
+    my $A = $a;
+    my $B = $b;
+    $A =~ s/(\d+)/sprintf "%09i", $1/egxms;
+    $B =~ s/(\d+)/sprintf "%09i", $1/egxms;
+    return $A cmp $B;
 }
 
 main();
 exit 0;
 
 sub main {
-	Getopt::Long::Configure('bundling');
-	GetOptions(
-		\%option,
-		'out|o=s',
-		'verbose|v+',
-		'man',
-		'help',
-		'VERSION!',
-	) or pod2usage(2);
+    Getopt::Long::Configure('bundling');
+    GetOptions(
+        \%option,
+        'out|o=s',
+        'verbose|v+',
+        'man',
+        'help',
+        'VERSION!',
+    ) or pod2usage(2);
 
-	if ( $option{'VERSION'} ) {
-		print "$name Version = $VERSION\n";
-		exit 1;
-	}
-	elsif ( $option{'man'} ) {
-		pod2usage( -verbose => 2 );
-	}
-	elsif ( $option{'help'} ) {
-		pod2usage( -verbose => 1 );
-	}
-	
-	# do stuff here
+    if ( $option{'VERSION'} ) {
+        print "$name Version = $VERSION\n";
+        exit 1;
+    }
+    elsif ( $option{'man'} ) {
+        pod2usage( -verbose => 2 );
+    }
+    elsif ( $option{'help'} ) {
+        pod2usage( -verbose => 1 );
+    }
 
-	return;
+    # do stuff here
+    my $mech         = WWW::Mechanize->new();
+    my $package_json = shift @ARGV || 'package.json';
+    my $package      = decode_json(scalar path($package_json)->slurp);
+
+    for my $type (qw/dependencies devDependencies/) {
+        my %dependencies;
+        for my $dependency ( keys %{ $package->{$type} || {} } ) {
+            my $details = eval {
+                $mech->get('http://registry.npmjs.org/' . $dependency);
+                decode_json($mech->content());
+            } || {};
+            warn $@ if $@;
+            undef $@;
+            my $current = path('node_modules', $dependency, 'package.json');
+            my @versions = keys %{ $details->{versions} };
+
+            my $versions = {
+                defined   => $package->{$type}{$dependency},
+                available => @versions && ( sort sorter @versions )[-1],
+            };
+
+            if ( -f $current ) {
+                my $actual = decode_json(scalar $current->slurp);
+                $versions->{actual} = $actual->{version};
+            }
+
+            $dependencies{$dependency} = $versions;
+        }
+
+        if (%dependencies) {
+            print "$type\n";
+            my $max = max map {length $_} "module", keys %dependencies;
+            printf "  %-${max}s %10s %10s %10s\n", 'Module', 'Defined', 'Actual', 'Available';
+
+            for my $dependency (sort keys %dependencies) {
+                printf "  %-${max}s %10s %10s %10s\n",
+                    $dependency,
+                    $dependencies{$dependency}{defined},
+                    $dependencies{$dependency}{actual} || ' ',
+                    $dependencies{$dependency}{available} || ' ';
+            }
+            print "\n";
+        }
+    }
+
+    return;
 }
 
 __DATA__
