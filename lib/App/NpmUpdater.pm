@@ -24,14 +24,14 @@ our %EXPORT_TAGS = ();
 #our @EXPORT      = qw//;
 
 sub new {
-	my $caller = shift;
-	my $class  = ref $caller ? ref $caller : $caller;
-	my %param  = @_;
-	my $self   = \%param;
+    my $caller = shift;
+    my $class  = ref $caller ? ref $caller : $caller;
+    my %param  = @_;
+    my $self   = \%param;
 
-	bless $self, $class;
+    bless $self, $class;
 
-	return $self;
+    return $self;
 }
 
 
