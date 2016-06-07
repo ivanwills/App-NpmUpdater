@@ -69,9 +69,10 @@ sub main {
     my $mech         = WWW::Mechanize->new();
     my $package_json = shift @ARGV || 'package.json';
     my $package      = decode_json(scalar path($package_json)->slurp);
+    my @types        = qw/dependencies devDependencies/;
+    my %dependencies;
 
-    for my $type (qw/dependencies devDependencies/) {
-        my %dependencies;
+    for my $type (@types) {
         for my $dependency ( keys %{ $package->{$type} || {} } ) {
             my $details = eval {
                 $mech->get('http://registry.npmjs.org/' . $dependency);
@@ -83,6 +84,7 @@ sub main {
             my @versions = keys %{ $details->{versions} };
 
             my $versions = {
+                $type     => 1,
                 defined   => $package->{$type}{$dependency},
                 available => @versions && ( sort sorter @versions )[-1],
             };
@@ -92,23 +94,33 @@ sub main {
                 $versions->{actual} = $actual->{version};
             }
 
+            next if !$option{verbose}
+                && $versions->{available}
+                && $versions->{actual}
+                && $versions->{available} eq $versions->{actual};
+
             $dependencies{$dependency} = $versions;
         }
 
-        if (%dependencies) {
-            print "$type\n";
-            my $max = max map {length $_} "module", keys %dependencies;
-            printf "  %-${max}s %10s %10s %10s\n", 'Module', 'Defined', 'Actual', 'Available';
+    }
 
-            for my $dependency (sort keys %dependencies) {
-                printf "  %-${max}s %10s %10s %10s\n",
-                    $dependency,
-                    $dependencies{$dependency}{defined},
-                    $dependencies{$dependency}{actual} || ' ',
-                    $dependencies{$dependency}{available} || ' ';
-            }
-            print "\n";
+    my $max = max map {length $_} "module", keys %dependencies;
+    for my $type (@types) {
+        my $start = sprintf "%s\n  %-${max}s %10s %10s %10s\n", $type, 'Module', 'Defined', 'Actual', 'Available';
+
+        for my $dependency (sort keys %dependencies) {
+            next if !$dependencies{$dependency}{$type};
+
+            print $start;
+            $start = '';
+
+            printf "  %-${max}s %10s %10s %10s\n",
+                $dependency,
+                $dependencies{$dependency}{defined},
+                $dependencies{$dependency}{actual} || ' ',
+                $dependencies{$dependency}{available} || ' ';
         }
+        print "\n";
     }
 
     return;
