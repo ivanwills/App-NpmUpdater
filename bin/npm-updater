@@ -78,7 +78,7 @@ sub main {
                 $mech->get('http://registry.npmjs.org/' . $dependency);
                 decode_json($mech->content());
             } || {};
-            warn $@ if $@;
+            warn $@ if $option{verbose} && $@;
             undef $@;
             my $current = path('node_modules', $dependency, 'package.json');
             my @versions = keys %{ $details->{versions} };
@@ -104,9 +104,15 @@ sub main {
 
     }
 
-    my $max = max map {length $_} "module", keys %dependencies;
+    my %max = (
+        name      => (max (length "module"   , map {length $_} keys %dependencies)),
+        defined   => (max (length "defined"  , map {length($dependencies{$_}{defined}   // '')} keys %dependencies)),
+        actual    => (max (length "actual"   , map {length($dependencies{$_}{actual}    // '')} keys %dependencies)),
+        available => (max (length "available", map {length($dependencies{$_}{available} // '')} keys %dependencies)),
+    );
+
     for my $type (@types) {
-        my $start = sprintf "%s\n  %-${max}s %10s %10s %10s\n", $type, 'Module', 'Defined', 'Actual', 'Available';
+        my $start = sprintf "%s\n  %-$max{name}s %$max{defined}s %$max{actual}s %$max{available}s\n", $type, 'Module', 'Defined', 'Actual', 'Available';
 
         for my $dependency (sort keys %dependencies) {
             next if !$dependencies{$dependency}{$type};
@@ -114,7 +120,7 @@ sub main {
             print $start;
             $start = '';
 
-            printf "  %-${max}s %10s %10s %10s\n",
+            printf "  %-$max{name}s %$max{defined}s %$max{actual}s %$max{available}s\n",
                 $dependency,
                 $dependencies{$dependency}{defined},
                 $dependencies{$dependency}{actual} || ' ',
