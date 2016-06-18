@@ -1,6 +1,6 @@
-package App::NpmUpdater;
+package App::Npm::Version;
 
-# Created on: 2016-06-08 08:22:20
+# Created on: 2016-06-09 16:43:24
 # Create by:  Ivan Wills
 # $Id$
 # $Revision$, $HeadURL$, $Date$
@@ -13,11 +13,19 @@ use Carp;
 use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.0.1');
+our $VERSION = version->new('0.0.1');
 
-has version => (
-    is => 'rw',
-    );
+has version (
+    is      => 'rw',
+    isa     => sub {
+        ref $_[0] eq 'ARRAY' && length $_[0] == 3;
+    },
+    default => sub {[]},
+);
+
+sub major { $_[0]->version->[0]; }
+sub minor { $_[0]->version->[1]; }
+sub patch { $_[0]->version->[2]; }
 
 1;
 
@@ -25,16 +33,16 @@ __END__
 
 =head1 NAME
 
-App::NpmUpdater - <One-line description of module's purpose>
+App::Npm::Version - <One-line description of module's purpose>
 
 =head1 VERSION
 
-This documentation refers to App::NpmUpdater version 0.0.1
+This documentation refers to App::Npm::Version version 0.0.1
 
 
 =head1 SYNOPSIS
 
-   use App::NpmUpdater;
+   use App::Npm::Version;
 
    # Brief but working code example(s) here showing the most common usage(s)
    # This section will be as far as many users bother reading, so make it as
@@ -67,7 +75,7 @@ context to help them understand the methods that are subsequently described.
 
 Param: C<$search> - type (detail) - description
 
-Return: App::NpmUpdater -
+Return: App::Npm::Version -
 
 Description:
 

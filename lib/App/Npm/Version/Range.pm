@@ -1,6 +1,6 @@
-package App::NpmUpdater;
+package App::Npm::Version::Range;
 
-# Created on: 2016-06-08 08:22:20
+# Created on: 2016-06-15 19:32:15
 # Create by:  Ivan Wills
 # $Id$
 # $Revision$, $HeadURL$, $Date$
@@ -10,14 +10,19 @@ use Moo;
 use warnings;
 use version;
 use Carp;
+use Scalar::Util;
+use List::Util;
+#use List::MoreUtils;
 use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 
-our $VERSION     = version->new('0.0.1');
+extends 'Some::Thing';
 
-has version => (
-    is => 'rw',
-    );
+our $VERSION = version->new('0.0.1');
+
+
+
+
 
 1;
 
@@ -25,16 +30,16 @@ __END__
 
 =head1 NAME
 
-App::NpmUpdater - <One-line description of module's purpose>
+App::Npm::Version::Range - <One-line description of module's purpose>
 
 =head1 VERSION
 
-This documentation refers to App::NpmUpdater version 0.0.1
+This documentation refers to App::Npm::Version::Range version 0.0.1
 
 
 =head1 SYNOPSIS
 
-   use App::NpmUpdater;
+   use App::Npm::Version::Range;
 
    # Brief but working code example(s) here showing the most common usage(s)
    # This section will be as far as many users bother reading, so make it as
@@ -67,7 +72,7 @@ context to help them understand the methods that are subsequently described.
 
 Param: C<$search> - type (detail) - description
 
-Return: App::NpmUpdater -
+Return: App::Npm::Version::Range -
 
 Description:
 
