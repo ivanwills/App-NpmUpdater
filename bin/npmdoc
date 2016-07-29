@@ -78,6 +78,19 @@ sub main {
     elsif ( exe_exists('go-md2man') ) {
         system "go-md2man -in=$readme -out=$dir/$module.roff";
     }
+    else {
+        warn <<'MESSAGE';
+Can't find either md2man-roff or go-md2man
+
+You may be able to install these in the following ways:
+  Debian/Ubuntu:
+    sudo apt install go-md2man
+  If Ruby is installed:
+    sudo gem install md2man
+
+MESSAGE
+        return;
+    }
 
     system "man -l $dir/$module.roff";
 
