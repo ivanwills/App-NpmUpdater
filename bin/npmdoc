@@ -72,11 +72,27 @@ sub main {
     my $readme = path($dir, "$module.md");
     $readme->spew($json->{readme});
 
-    system "md2man-roff $readme > $dir/$module.roff";
+    if ( exe_exists('md2man-roff') ) {
+        system "md2man-roff $readme > $dir/$module.roff";
+    }
+    elsif ( exe_exists('go-md2man') ) {
+        system "go-md2man -in=$readme -out=$dir/$module.roff";
+    }
 
     system "man -l $dir/$module.roff";
 
     return;
+}
+
+sub exe_exists {
+    my ($exe) = @_;
+
+    for my $dir (split /:/, $ENV{PATH}) {
+        next if !-d $dir;
+        return 1 if -e path($dir, $exe);
+    }
+
+    return 0;
 }
 
 __DATA__
