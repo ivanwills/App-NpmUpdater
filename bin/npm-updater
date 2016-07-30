@@ -48,7 +48,7 @@ sub main {
     Getopt::Long::Configure('bundling');
     GetOptions(
         \%option,
-        'out|o=s',
+        'cache|c=s',
         'verbose|v+',
         'man',
         'help',
@@ -153,7 +153,7 @@ This documentation refers to bin/npm-updater version 0.0.1
    bin/npm-updater [option]
 
  OPTIONS:
-  -o --other         other option
+  -c --cache[=]dir   Directory to store cached npmjs.com calls
 
   -v --verbose       Show more detailed option
      --version       Prints the version information
