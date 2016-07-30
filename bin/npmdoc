@@ -18,7 +18,8 @@ use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 use FindBin qw/$Bin/;
 use Path::Tiny;
-use WWW::Mechanize;
+use WWW::Mechanize::Cached;
+use CHI;
 use File::Temp qw/tempdir/;
 use JSON::XS qw/decode_json/;
 
@@ -26,7 +27,7 @@ our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 
 my %option = (
-    out     => undef,
+    cache   => '/tmp/npmupdater',
     verbose => 0,
     man     => 0,
     help    => 0,
@@ -63,7 +64,12 @@ sub main {
     }
 
     # do stuff here
-    my $mech   = WWW::Mechanize->new;
+    my $mech = WWW::Mechanize::Cached->new(
+        cache => CHI->new(
+            driver   => 'File',
+            root_dir => $option{cache},
+        ),
+    );
     my $module = shift @ARGV;
     my $dir    = tempdir( CLEANUP => 1 );
     $mech->get('http://registry.npmjs.org/' . $module);

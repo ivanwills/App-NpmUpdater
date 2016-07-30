@@ -19,13 +19,14 @@ use English qw/ -no_match_vars /;
 use FindBin qw/$Bin/;
 use Path::Tiny;
 use JSON::XS qw/decode_json/;
-use WWW::Mechanize;
+use WWW::Mechanize::Cached;
+use CHI;
 
 our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 
 my %option = (
-    out     => undef,
+    cache   => '/tmp/npmupdater',
     verbose => 0,
     man     => 0,
     help    => 0,
@@ -66,7 +67,12 @@ sub main {
     }
 
     # do stuff here
-    my $mech         = WWW::Mechanize->new();
+    my $mech = WWW::Mechanize::Cached->new(
+        cache => CHI->new(
+            driver   => 'File',
+            root_dir => $option{cache},
+        ),
+    );
     my $package_json = shift @ARGV || 'package.json';
     my $package      = decode_json(scalar path($package_json)->slurp);
     my @types        = qw/dependencies devDependencies/;
