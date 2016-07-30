@@ -16,8 +16,6 @@ use List::Util;
 use Data::Dumper qw/Dumper/;
 use English qw/ -no_match_vars /;
 
-extends 'Some::Thing';
-
 our $VERSION = version->new('0.0.1');
 
 
