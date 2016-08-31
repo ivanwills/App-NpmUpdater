@@ -27,11 +27,12 @@ our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
 
 my %option = (
-    cache   => '/tmp/npmupdater',
-    verbose => 0,
-    man     => 0,
-    help    => 0,
-    VERSION => 0,
+    cache    => '/tmp/npmupdater',
+    registry => do { $_ = `npm get registry`; chomp; s{/$}{};  $_ },
+    verbose  => 0,
+    man      => 0,
+    help     => 0,
+    VERSION  => 0,
 );
 
 if ( !@ARGV ) {
@@ -46,6 +47,8 @@ sub main {
     GetOptions(
         \%option,
         'cache|c=s',
+        'registry|r=s',
+        'versions|V!',
         'verbose|v+',
         'man',
         'help',
@@ -70,9 +73,12 @@ sub main {
             root_dir => $option{cache},
         ),
     );
+
     my $module = shift @ARGV;
     my $dir    = tempdir( CLEANUP => 1 );
-    $mech->get('http://registry.npmjs.org/' . $module);
+
+    warn "Getting $option{registry}/$module\n" if $option{verbose};
+    $mech->get("$option{registry}/$module");
     my $json = decode_json( $mech->content );
 
     my $readme = path($dir, "$module.md");
@@ -98,7 +104,20 @@ MESSAGE
         return;
     }
 
-    system "man -l $dir/$module.roff";
+    if ($option{versions}) {
+        print "$module version:\n  ";
+        print join "\n  ", sort {
+            my $A=$a;
+            my $B=$b;
+            $A =~ s/(\d+)/sprintf "%05i", $1/egxms;
+            $B =~ s/(\d+)/sprintf "%05i", $1/egxms;
+            $A cmp $B
+        } keys %{ $json->{versions} };
+        print "\n";
+    }
+    else {
+        system "man -l $dir/$module.roff";
+    }
 
     return;
 }
@@ -129,12 +148,15 @@ This documentation refers to npmdoc version 0.0.1
    npmdoc [option] package
 
  OPTIONS:
-  -c --cache[=]dir   Directory to store cached npmjs.com calls
+  -c --cache[=]dir
+                Directory to store cached npmjs.com calls
+  -r --registry[=]url
+                Specify an alternate NPM registry to use
 
-  -v --verbose       Show more detailed option
-     --version       Prints the version information
-     --help          Prints this help information
-     --man           Prints the full documentation for npmdoc
+  -v --verbose  Show more detailed option
+     --version  Prints the version information
+     --help     Prints this help information
+     --man      Prints the full documentation for npmdoc
 
 =head1 DESCRIPTION
 
