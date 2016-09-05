@@ -26,6 +26,7 @@ has version (
 sub major { $_[0]->version->[0]; }
 sub minor { $_[0]->version->[1]; }
 sub patch { $_[0]->version->[2]; }
+sub dev   { $_[0]->version->[3]; }
 
 1;
 
