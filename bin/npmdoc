@@ -62,7 +62,7 @@ sub main {
     elsif ( $option{'man'} ) {
         pod2usage( -verbose => 2 );
     }
-    elsif ( $option{'help'} ) {
+    elsif ( $option{'help'} || !@ARGV ) {
         pod2usage( -verbose => 1 );
     }
 
