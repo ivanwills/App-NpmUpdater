@@ -152,6 +152,7 @@ This documentation refers to npmdoc version 0.0.1
                 Directory to store cached npmjs.com calls
   -r --registry[=]url
                 Specify an alternate NPM registry to use
+  -V --versions Show all available versions
 
   -v --verbose  Show more detailed option
      --version  Prints the version information
