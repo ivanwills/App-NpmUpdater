@@ -44,6 +44,12 @@ This documentation refers to App::NpmUpdater version 0.0.1
 
 =head1 SUBROUTINES/METHODS
 
+=head1 ATTRIBUTES
+
+=head2 version
+
+A version
+
 =head1 DIAGNOSTICS
 
 =head1 CONFIGURATION AND ENVIRONMENT
