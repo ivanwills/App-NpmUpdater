@@ -7,7 +7,7 @@ use warnings;
 use Test::More;
 use Test::Warnings;
 
-my $module = 'module';
+my $module = 'App::NpmUpdater';
 use_ok( $module );
 
 
