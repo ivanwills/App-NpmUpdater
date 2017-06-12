@@ -21,6 +21,7 @@ use Path::Tiny;
 use JSON::XS qw/decode_json/;
 use WWW::Mechanize::Cached;
 use CHI;
+use Term::ANSIColor qw/colored/;
 
 our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
@@ -126,11 +127,21 @@ sub main {
             print $start;
             $start = '';
 
-            printf "  %-$max{name}s %$max{defined}s %$max{actual}s %$max{available}s\n",
+            my @diff_actual = split /[.-]/, $dependencies{$dependency}{actual};
+            my @diff_available = split /[.-]/, $dependencies{$dependency}{available};
+            my @colors = qw/red magenta blue/;
+            my $color = 'black';
+            for my $i (0 .. $#colors) {
+                if ( $diff_actual[$i] ne $diff_available[$i] ) {
+                    $color = $colors[$i];
+                    last;
+                }
+            }
+            printf "  %-$max{name}s %$max{defined}s %$max{actual}s %s\n",
                 $dependency,
                 $dependencies{$dependency}{defined},
                 $dependencies{$dependency}{actual} || ' ',
-                $dependencies{$dependency}{available} || ' ';
+                colored([$color], sprintf "%$max{available}s", $dependencies{$dependency}{available} || ' ');
         }
         print "\n";
     }
