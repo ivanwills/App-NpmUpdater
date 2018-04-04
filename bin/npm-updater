@@ -132,7 +132,7 @@ sub main {
             my @colors = qw/red magenta blue/;
             my $color = 'black';
             for my $i (0 .. $#colors) {
-                if ( $diff_actual[$i] ne $diff_available[$i] ) {
+                if ( $diff_actual[$i] && $diff_available[$i] && $diff_actual[$i] ne $diff_available[$i] ) {
                     $color = $colors[$i];
                     last;
                 }
