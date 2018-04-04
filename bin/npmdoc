@@ -84,14 +84,15 @@ sub main {
     my $readme = path($dir, "$module.md");
     $readme->spew($json->{readme});
 
-    if ( exe_exists('md2man-roff') ) {
-        system "md2man-roff $readme > $dir/$module.roff";
-    }
-    elsif ( exe_exists('go-md2man') ) {
-        system "go-md2man -in=$readme -out=$dir/$module.roff";
-    }
-    else {
-        warn <<'MESSAGE';
+    if ( -s $readme ) {
+        if ( exe_exists('md2man-roff') ) {
+            system "md2man-roff $readme > $dir/$module.roff 2> /dev/null";
+        }
+        elsif ( exe_exists('go-md2man') ) {
+            system "go-md2man -in=$readme -out=$dir/$module.roff 2> /dev/null";
+        }
+        else {
+            warn <<'MESSAGE';
 Can't find either md2man-roff or go-md2man
 
 You may be able to install these in the following ways:
@@ -101,7 +102,8 @@ You may be able to install these in the following ways:
     sudo gem install md2man
 
 MESSAGE
-        return;
+            return;
+        }
     }
 
     if ($option{versions}) {
