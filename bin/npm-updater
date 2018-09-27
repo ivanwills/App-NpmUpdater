@@ -93,7 +93,7 @@ sub main {
             my $versions = {
                 $type     => 1,
                 defined   => $package->{$type}{$dependency},
-                available => @versions && ( sort sorter @versions )[-1],
+                available => @versions && ( sort sorter grep {!/[a-zA-Z-]/} @versions )[-1],
             };
 
             if ( -f $current ) {
