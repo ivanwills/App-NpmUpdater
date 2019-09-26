@@ -25,6 +25,7 @@ use Term::ANSIColor qw/colored/;
 
 our $VERSION = version->new('0.0.1');
 my ($name)   = $PROGRAM_NAME =~ m{^.*/(.*?)$}mxs;
+my $mech;
 
 my %option = (
     cache   => '/tmp/npmupdater',
@@ -50,6 +51,7 @@ sub main {
     GetOptions(
         \%option,
         'cache|c=s',
+        'pre_release|pre-release|p',
         'verbose|v+',
         'man',
         'help',
@@ -68,7 +70,7 @@ sub main {
     }
 
     # do stuff here
-    my $mech = WWW::Mechanize::Cached->new(
+    $mech = WWW::Mechanize::Cached->new(
         cache => CHI->new(
             driver   => 'File',
             root_dir => $option{cache},
@@ -81,20 +83,17 @@ sub main {
 
     for my $type (@types) {
         for my $dependency ( keys %{ $package->{$type} || {} } ) {
-            my $details = eval {
-                $mech->get('http://registry.npmjs.org/' . $dependency);
-                decode_json($mech->content());
-            } || {};
+            my $details = package_details($dependency);
             warn $@ if $option{verbose} && $@;
             undef $@;
             my $current = path('node_modules', $dependency, 'package.json');
-            my @versions = keys %{ $details->{versions} };
+            my @versions = sort keys %{ $details->{versions} };
 
             my $versions = {
                 type      => $type =~ /^([a-z]+)Dependencies$/ ? $1 : '',
                 $type     => 1,
                 defined   => $package->{$type}{$dependency},
-                available => @versions && ( sort sorter grep {!/[a-zA-Z-]/} @versions )[-1],
+                available => @versions && ( sort sorter grep {$option{pre_release} ? 1 : !/[a-zA-Z-]/} @versions )[-1],
             };
 
             if ( -f $current ) {
@@ -129,8 +128,8 @@ sub main {
 
             my @diff_actual = split /[.-]/, $dependencies{$type}{$dependency}{actual} || '';
             my @diff_available = split /[.-]/, $dependencies{$type}{$dependency}{available};
-            my @colors = qw/red magenta blue/;
-            my $color = 'black';
+            my @colors = qw/red yellow blue/;
+            my $color = 'white';
             for my $i (0 .. $#colors) {
                 if ( $diff_actual[$i] && $diff_available[$i] && $diff_actual[$i] ne $diff_available[$i] ) {
                     $color = $colors[$i];
@@ -149,6 +148,22 @@ sub main {
     return;
 }
 
+sub get_regestry {
+    my ($dependency) = @_;
+
+    return 'http://registry.npmjs.org/';
+}
+
+sub package_details {
+    my ($dependency) = @_;
+    my $registry = get_regestry($dependency);
+
+    return eval {
+        $mech->get($registry . $dependency);
+        decode_json($mech->content());
+    } || {};
+}
+
 __DATA__
 
 =head1 NAME
@@ -165,6 +180,7 @@ This documentation refers to npm-updater version 0.0.1
 
  OPTIONS:
   -c --cache[=]dir   Directory to store cached npmjs.com calls
+  -p --pre-release   Include pre-release versions
 
   -v --verbose       Show more detailed option
      --version       Prints the version information
