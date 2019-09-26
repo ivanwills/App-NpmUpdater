@@ -76,7 +76,7 @@ sub main {
     );
     my $package_json = @ARGV && -f $ARGV[0] ? shift @ARGV : 'package.json';
     my $package      = decode_json(scalar path($package_json)->slurp);
-    my @types        = qw/dependencies devDependencies/;
+    my @types        = qw/dependencies devDependencies peerDependencies/;
     my %dependencies;
 
     for my $type (@types) {
@@ -91,6 +91,7 @@ sub main {
             my @versions = keys %{ $details->{versions} };
 
             my $versions = {
+                type      => $type =~ /^([a-z]+)Dependencies$/ ? $1 : '',
                 $type     => 1,
                 defined   => $package->{$type}{$dependency},
                 available => @versions && ( sort sorter grep {!/[a-zA-Z-]/} @versions )[-1],
@@ -106,29 +107,28 @@ sub main {
                 && $versions->{actual}
                 && $versions->{available} eq $versions->{actual};
 
-            $dependencies{$dependency} = $versions;
+            $dependencies{$type}{$dependency} = $versions;
         }
 
     }
 
-    my %max = (
-        name      => (max (length "module"   , map {length $_} keys %dependencies)),
-        defined   => (max (length "defined"  , map {length($dependencies{$_}{defined}   // '')} keys %dependencies)),
-        actual    => (max (length "actual"   , map {length($dependencies{$_}{actual}    // '')} keys %dependencies)),
-        available => (max (length "available", map {length($dependencies{$_}{available} // '')} keys %dependencies)),
-    );
-
     for my $type (@types) {
+        my %max = (
+            name      => (max (length "module"   , map {length $_} keys %{$dependencies{$type}})),
+            type      => (max (length "type"     , map {length($dependencies{$type}{$_}{type}      // '')} keys %{$dependencies{$type}})),
+            defined   => (max (length "defined"  , map {length($dependencies{$type}{$_}{defined}   // '')} keys %{$dependencies{$type}})),
+            actual    => (max (length "actual"   , map {length($dependencies{$type}{$_}{actual}    // '')} keys %{$dependencies{$type}})),
+            available => (max (length "available", map {length($dependencies{$type}{$_}{available} // '')} keys %{$dependencies{$type}})),
+        );
+
         my $start = sprintf "%s\n  %-$max{name}s %$max{defined}s %$max{actual}s %$max{available}s\n", $type, 'Module', 'Defined', 'Actual', 'Available';
 
-        for my $dependency (sort keys %dependencies) {
-            next if !$dependencies{$dependency}{$type};
-
+        for my $dependency (sort keys %{$dependencies{$type}}) {
             print $start;
             $start = '';
 
-            my @diff_actual = split /[.-]/, $dependencies{$dependency}{actual};
-            my @diff_available = split /[.-]/, $dependencies{$dependency}{available};
+            my @diff_actual = split /[.-]/, $dependencies{$type}{$dependency}{actual} || '';
+            my @diff_available = split /[.-]/, $dependencies{$type}{$dependency}{available};
             my @colors = qw/red magenta blue/;
             my $color = 'black';
             for my $i (0 .. $#colors) {
@@ -139,9 +139,9 @@ sub main {
             }
             printf "  %-$max{name}s %$max{defined}s %$max{actual}s %s\n",
                 $dependency,
-                $dependencies{$dependency}{defined},
-                $dependencies{$dependency}{actual} || ' ',
-                colored([$color], sprintf "%$max{available}s", $dependencies{$dependency}{available} || ' ');
+                $dependencies{$type}{$dependency}{defined},
+                $dependencies{$type}{$dependency}{actual} || ' ',
+                colored([$color], sprintf "%$max{available}s", $dependencies{$type}{$dependency}{available} || ' ');
         }
         print "\n";
     }
