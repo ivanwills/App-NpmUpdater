@@ -78,7 +78,7 @@ sub main {
     );
     my $package_json = @ARGV && -f $ARGV[0] ? shift @ARGV : 'package.json';
     my $package      = decode_json(scalar path($package_json)->slurp);
-    my @types        = qw/dependencies devDependencies peerDependencies/;
+    my @types        = qw/dependencies devDependencies optionalDependencies peerDependencies/;
     my %dependencies;
 
     for my $type (@types) {
