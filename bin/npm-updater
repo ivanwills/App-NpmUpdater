@@ -149,9 +149,12 @@ sub main {
 }
 
 sub get_regestry {
-    my ($dependency) = @_;
+    my ($group) = @_;
+    $group =~ s{/.*$}{:};
+    my $npm = `npm config list --json`;
+    $npm = decode_json($npm);
 
-    return 'http://registry.npmjs.org/';
+    return $npm->{"${group}registry"} || $npm->{registry} || 'http://registry.npmjs.org/';
 }
 
 sub package_details {
