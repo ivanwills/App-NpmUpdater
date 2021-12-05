@@ -52,6 +52,7 @@ sub main {
         \%option,
         'cache|c=s',
         'pre_release|pre-release|p',
+        'update|u=s',
         'verbose|v+',
         'man',
         'help',
@@ -68,6 +69,14 @@ sub main {
     elsif ( $option{'help'} ) {
         pod2usage( -verbose => 1 );
     }
+    elsif ($option{update}) {
+        $option{update} = lc $option{update};
+        if ($option{update} ne 'patch' && $option{update} ne 'minor' && $option{update} ne 'major') {
+            warn "The option --update takes one of major, minor or patch!\n";
+            pod2usage( -verbose => 1 );
+        }
+    }
+
 
     # do stuff here
     $mech = WWW::Mechanize::Cached->new(
@@ -143,9 +152,45 @@ sub main {
                 colored([$color], sprintf "%$max{available}s", $dependencies{$type}{$dependency}{available} || ' ');
         }
         print "\n";
+
+    }
+
+    if ($option{update}) {
+        update(\%dependencies);
     }
 
     return;
+}
+
+sub update {
+    my ($dependencies) = @_;
+
+    my $match = $option{update} eq 'patch' ? qr/^(\d+[.]\d+[.])\d+$/
+        :   $option{update} eq 'minor'     ? qr/^(\d+[.])\d+[.]\d+$/
+        :   $option{update} eq 'major'     ? qr/^(q)\d+[.]\d+[.]\d+$/
+        :                                    qr/(.*)/;
+    my $pkg = path('package.json')->slurp();
+
+    for my $type (keys %$dependencies) {
+        for my $package (keys %{$dependencies->{$type}}) {
+            my %ver = %{$dependencies->{$type}{$package}};
+
+            # skip if no change
+            next if $ver{defined} eq $ver{available};
+            my ($defined) = $ver{defined} =~ /$match/xms;
+            my ($available) = $ver{available} =~ /$match/xms;
+
+            if ((!defined $defined && !defined $available) ||
+                (defined $defined && defined $available && $defined eq $available)
+            ) {
+                $pkg =~ s/"$package"\s*:\s*"$ver{defined}"/"$package": "$ver{available}"/gxms;
+                if ($pkg !~ /"$package": "$ver{available}"/) {
+                    die "Could not update $package with $ver{available}!\n";
+                }
+            }
+        }
+    }
+    path('package.json')->spew($pkg);
 }
 
 sub get_regestry {
@@ -184,6 +229,8 @@ This documentation refers to npm-updater version 0.0.1
  OPTIONS:
   -c --cache[=]dir   Directory to store cached npmjs.com calls
   -p --pre-release   Include pre-release versions
+  -u --update[=](major|minor|patch)
+                     Update all package with changes in the major, minor or patch level
 
   -v --verbose       Show more detailed option
      --version       Prints the version information
