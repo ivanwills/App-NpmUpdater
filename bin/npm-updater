@@ -165,9 +165,9 @@ sub main {
 sub update {
     my ($dependencies) = @_;
 
-    my $match = $option{update} eq 'patch' ? qr/^(\d+[.]\d+[.])\d+$/
-        :   $option{update} eq 'minor'     ? qr/^(\d+[.])\d+[.]\d+$/
-        :   $option{update} eq 'major'     ? qr/^(q)\d+[.]\d+[.]\d+$/
+    my $match = $option{update} eq 'patch' ? qr/^\W?(\d+[.]\d+[.])\d+$/
+        :   $option{update} eq 'minor'     ? qr/^\W?(\d+[.])\d+[.]\d+$/
+        :   $option{update} eq 'major'     ? qr/^\W?(q)\d+[.]\d+[.]\d+$/
         :                                    qr/(.*)/;
     my $pkg = path('package.json')->slurp();
 
@@ -185,7 +185,7 @@ sub update {
             ) {
                 $pkg =~ s/"$package"\s*:\s*"$ver{defined}"/"$package": "$ver{available}"/gxms;
                 if ($pkg !~ /"$package": "$ver{available}"/) {
-                    die "Could not update $package with $ver{available}!\n";
+                    die "Could not update $package with $ver{available}! (s/"$package"\s*:\s*"$ver{defined}"/"$package": "$ver{available}"/gxms)\n";
                 }
             }
         }
