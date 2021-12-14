@@ -185,7 +185,7 @@ sub update {
             ) {
                 $pkg =~ s/"$package"\s*:\s*"$ver{defined}"/"$package": "$ver{available}"/gxms;
                 if ($pkg !~ /"$package": "$ver{available}"/) {
-                    die "Could not update $package with $ver{available}! (s/"$package"\s*:\s*"$ver{defined}"/"$package": "$ver{available}"/gxms)\n";
+                    die qq-Could not update $package with $ver{available}! (s/"$package"\\s*:\\s*"$ver{defined}"/"$package": "$ver{available}"/gxms)\n-;
                 }
             }
         }
